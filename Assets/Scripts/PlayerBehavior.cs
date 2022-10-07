@@ -4,21 +4,29 @@ using UnityEngine;
 
 public class PlayerBehavior : MonoBehaviour
 {
+    public ArmBehavior Arm;
+    public Rigidbody2D PlayerRB;
+
+    //Variables for as far as the eye can see...
+
     public float Speed = 0;
     public float WalkSpeed = 8;
     public float RunSpeed = 20;
 
     public float TimeStartedMoving;
+    public float TimeStartedJumping;
+    public float TimeStoppedJumping;
+    public Vector3 BaseScale;
 
     public Vector2 JumpForce = new Vector2(0,100);
     public float DashVelocityX = 1300;
     public float DashVelocityY = 150;
     public Vector2 AddedJumpForce = new Vector2(0,1.5f);//the amount the player increased each frame bc of holding space
-    
-    Rigidbody2D PlayerRB;
 
-    bool TouchingGround = true;
-    bool CanDoubleJump = true;
+    public bool CanJump = true;
+    public bool CanDoubleJump = true;
+    public bool Jumping = false;
+    public bool Dashing = false;
     bool FacingRight = true;
 
     public float BaseMass = 2.5f;
@@ -34,6 +42,9 @@ public class PlayerBehavior : MonoBehaviour
     void Start()
     {
         PlayerRB = GetComponent<Rigidbody2D>();
+
+        BaseScale = gameObject.transform.localScale;
+
         Speed = WalkSpeed;
         TimeStartedMoving = Time.time;
 
@@ -42,9 +53,33 @@ public class PlayerBehavior : MonoBehaviour
 
     // Update is called once per frame
     void Update()
+    {   
+        Running();
+
+        //Reset Speed when change directions
+        if((Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D))&&CanDoubleJump)
+        {
+            TimeStartedMoving = Time.time;
+            Speed = WalkSpeed;
+        }
+        FaceDirection();
+
+        //Jump
+            // When the player starts to descend, their mass will increase. If the player holds down space however, their mass will not increase and they will fall a bit faster
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+            Jumps();
+        }
+        AnimateJump();
+
+        //Speed up descent
+        AdjustJump();
+    }
+
+    void FixedUpdate()
     {
         //walk
-        if(CanDoubleJump)
+        if(!Dashing)
         {
             float xMove = Input.GetAxis("Horizontal");
 
@@ -53,63 +88,48 @@ public class PlayerBehavior : MonoBehaviour
             NewPos.x += xMove * Speed * Time.deltaTime;
             gameObject.transform.position = NewPos;
         }
-        
 
-        FaceDirection();
-        Running();
-
-        if(PlayerRB.velocity.y == 0)
-        {
-            CanDoubleJump = true;
-            TouchingGround = true;
-        }
-
-        //Jump
-            // When the player starts to descend, their mass will increase. If the player holds down space however, their mass will not increase and they will fall a bit faster
-        if(Input.GetKeyDown(KeyCode.Space))
-        {
-            Jumps();
-        }
-
-        //Speed up descent
-        AdjustJump();
     }
 
     public void FaceDirection()
     {
-        if(Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D))
-        {
-            TimeStartedMoving = Time.time;
-            Speed = WalkSpeed;
-        }
-
         //Flip the sprite pretty much
-        if(Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D) && CanDoubleJump) //turn left
+        //                                   Turn to left                                                              Turn to right
+        if(((Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D) && FacingRight) || (Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A) && !FacingRight)) && CanDoubleJump ) //turn left
         {
-            FacingRight=false;
-            gameObject.transform.localScale = new Vector3 (1,1,1);
-        }
-        else if(Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A) && CanDoubleJump) //turn right
-        {
-            FacingRight = true;
-            gameObject.transform.localScale = new Vector3 (-1,1,1);
+            FacingRight=!FacingRight;
+            BaseScale[0] *= -1;
+            PreviousScale = BaseScale;
+            gameObject.transform.localScale = BaseScale;
         }
     }
 
-    //Manages Jumps and Double Jumps
+    Vector3 PreviousScale = new Vector3(1,1,1);
+    //Manages Jumps and Double Jumps. is triggered when user presses space
     public void Jumps()
     {
         //Regular Jump
-        if(TouchingGround)
+        if(CanJump)
         {
+            Debug.Log("Jump");
+            Jumping = true;
+            CanJump = false;
+
             PlayerRB.AddForce(JumpForce);
-            TouchingGround = false;
-            gameObject.transform.localScale = new Vector3 (gameObject.transform.localScale.x,1.1f,1);
+
+            //animation stuff
+            TimeStartedJumping = Time.time;
+            PreviousScale = gameObject.transform.localScale;
         }
         //Double Jump
         else if (CanDoubleJump)
         {
+            Debug.Log("Dash");
+
+            Jumping = false;
+            Dashing = true;
             CanDoubleJump = false;
+            
             Vector2 DashVelocity = new Vector2(DashVelocityX*Speed/WalkSpeed,DashVelocityY);
             // negative X value if facing left
             if(!FacingRight)
@@ -117,19 +137,38 @@ public class PlayerBehavior : MonoBehaviour
                 DashVelocity = new Vector2(DashVelocity.x*-1,DashVelocityY);
             }
 
-            //PlayerRB.AddForce(DashVelocity);
             PlayerRB.velocity=DashVelocity;
-            gameObject.transform.localScale = new Vector3 (gameObject.transform.localScale.x, 0.9f,1);
 
+            //animation stuff
+            TimeStartedJumping = Time.time;
+            PreviousScale = gameObject.transform.localScale;
+        }
+    }
+
+    public float JumpAnimationSpeed = 10;
+    public void AnimateJump()
+    {
+        if(Jumping)
+        {
+            gameObject.transform.localScale = Vector3.Lerp(PreviousScale, new Vector3(gameObject.transform.localScale.x,1.08f,1), (Time.time-TimeStartedJumping)/JumpAnimationSpeed);
+        }
+        else if(Dashing)
+        {
+            gameObject.transform.localScale = Vector3.Lerp(PreviousScale, new Vector3(gameObject.transform.localScale.x*1.3f,0.85f,1), (Time.time-TimeStartedJumping)/JumpAnimationSpeed);
+        }
+        //when they on the ground
+        else if(gameObject.transform.localScale != BaseScale)
+        {
+            gameObject.transform.localScale = Vector3.Lerp(PreviousScale, BaseScale, (Time.time-TimeStoppedJumping)*5);
         }
     }
 
     //Essentially, it lets the player control the height / speed of their jump by holding space
     public void AdjustJump()
     {
-        if(!TouchingGround)
+        if(Jumping)
         {
-            //control their rate of descent
+            //going down
             if(PlayerRB.velocity.y<0)
             {
                 //Fast descent
@@ -143,11 +182,10 @@ public class PlayerBehavior : MonoBehaviour
                 {
                     PlayerRB.mass = BaseMass * SlowDescentModifier;
                     PlayerRB.gravityScale = BaseGravityScale * SlowDescentModifier;
-                    
                 }
             }
 
-            //player can also jump higher by holding space
+            //going up
             else
             {
                 //Debug.Log(PlayerRB.position);
@@ -168,17 +206,17 @@ public class PlayerBehavior : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        /*
-        if(collision.gameObject.tag == "Platform" && false)
+        
+        if(collision.gameObject.tag == "Floor")
         {
             ResetCharacter();
         }
-        */
+        
     }
 
     public void Running()
     {
-        if(TouchingGround)
+        if(CanJump)
         {
             if(Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D))
             {
@@ -202,9 +240,17 @@ public class PlayerBehavior : MonoBehaviour
     {
         PlayerRB.mass = BaseMass;
         PlayerRB.gravityScale = BaseGravityScale;
-        TouchingGround = true;
+
         CanDoubleJump = true;
-        gameObject.transform.localScale = new Vector3 (gameObject.transform.localScale.x,1,1);
+        CanJump = true;
+        Jumping = false;
+        Dashing = false;
+
+        //animation stuff
+        PreviousScale = gameObject.transform.localScale;
+        TimeStoppedJumping = Time.time;
+        //gameObject.transform.localScale = BaseScale;
         
+        Arm.FirstRodeo = true;
     }
 }
