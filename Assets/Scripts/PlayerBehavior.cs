@@ -6,12 +6,18 @@ public class PlayerBehavior : MonoBehaviour
 {
     public ArmBehavior Arm;
     public Rigidbody2D PlayerRB;
+    public SpriteRenderer SpriteRender;
 
-    //Variables for as far as the eye can see...
+    // Variables for as far as the eye can see...
 
+    public bool DebugMode=false;
+    
     public float Speed = 0;
     public float WalkSpeed = 8;
     public float RunSpeed = 20;
+    public float StunDuration = 0.75f;
+
+    public float EdgeGrabRadius = 2;
 
     public float TimeStartedMoving;
     public float TimeStartedJumping;
@@ -27,10 +33,16 @@ public class PlayerBehavior : MonoBehaviour
     public bool CanDoubleJump = true;
     public bool Jumping = false;
     public bool Dashing = false;
-    bool FacingRight = true;
+    public bool FacingRight = true;
+
+    public bool Stunned = false;
+    public float TimeStunned;
 
     public float BaseMass = 2.5f;
     public float BaseGravityScale = 1.5f;
+    public float DashGravityScale = 1f;
+
+    public float DashGravityAdjustSpeed = 40; //yep those are certainly words in a variable name
 
     public float SlowAscentModifier = 0.8f;
     public float SlowDescentModifier = 0.8f;
@@ -38,10 +50,16 @@ public class PlayerBehavior : MonoBehaviour
     public float FastAscentModifier = 1.3f;
     public float FastDescentModifier = 1.4f;
 
+    private bool InsideJumpBoost = false;
+    public bool OnSpring = false;
+
+    private float xMove=0;
+
     // Start is called before the first frame update
     void Start()
     {
         PlayerRB = GetComponent<Rigidbody2D>();
+        SpriteRender = gameObject.GetComponent<SpriteRenderer>();
 
         BaseScale = gameObject.transform.localScale;
 
@@ -55,6 +73,9 @@ public class PlayerBehavior : MonoBehaviour
     void Update()
     {   
         Running();
+        
+        //xmove is calculated in BeStunned
+        BeStunned();
 
         //Reset Speed when change directions
         if((Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D))&&CanDoubleJump)
@@ -66,7 +87,7 @@ public class PlayerBehavior : MonoBehaviour
 
         //Jump
             // When the player starts to descend, their mass will increase. If the player holds down space however, their mass will not increase and they will fall a bit faster
-        if(Input.GetKeyDown(KeyCode.Space))
+        if(Input.GetKeyDown(KeyCode.Space) && !Stunned)
         {
             Jumps();
         }
@@ -74,6 +95,9 @@ public class PlayerBehavior : MonoBehaviour
 
         //Speed up descent
         AdjustJump();
+
+        LedgeGrab();
+
     }
 
     void FixedUpdate()
@@ -81,8 +105,6 @@ public class PlayerBehavior : MonoBehaviour
         //walk
         if(!Dashing)
         {
-            float xMove = Input.GetAxis("Horizontal");
-
             Vector2 NewPos = gameObject.transform.position;
 
             NewPos.x += xMove * Speed * Time.deltaTime;
@@ -103,15 +125,16 @@ public class PlayerBehavior : MonoBehaviour
             gameObject.transform.localScale = BaseScale;
         }
     }
-
+    
     Vector3 PreviousScale = new Vector3(1,1,1);
     //Manages Jumps and Double Jumps. is triggered when user presses space
     public void Jumps()
     {
         //Regular Jump
-        if(CanJump)
+        if(CanJump && !OnSpring)
         {
-            Debug.Log("Jump");
+            if(DebugMode) Debug.Log("Jump");
+    
             Jumping = true;
             CanJump = false;
 
@@ -122,9 +145,9 @@ public class PlayerBehavior : MonoBehaviour
             PreviousScale = gameObject.transform.localScale;
         }
         //Double Jump
-        else if (CanDoubleJump)
+        else if (CanDoubleJump && !InsideJumpBoost)
         {
-            Debug.Log("Dash");
+            if (DebugMode) Debug.Log("Dash");
 
             Jumping = false;
             Dashing = true;
@@ -138,10 +161,42 @@ public class PlayerBehavior : MonoBehaviour
             }
 
             PlayerRB.velocity=DashVelocity;
+            PlayerRB.gravityScale=DashGravityScale;
 
             //animation stuff
             TimeStartedJumping = Time.time;
             PreviousScale = gameObject.transform.localScale;
+        }
+    }
+
+    public void BeStunned()
+    {   
+        //Normal
+        if(!Stunned) 
+        {
+            xMove = Input.GetAxis("Horizontal");
+        }
+
+        //Stops being Stunned
+        else if (TimeStunned+StunDuration<=Time.time)
+        {
+            Stunned = false;
+            SpriteRender.enabled=true;
+        }
+
+        //Runs when stunned
+        else 
+        {
+            xMove=0;
+            //have the player flash between visibile and not
+            if(Time.frameCount%120>=90)
+            {
+                SpriteRender.enabled=false;
+            }
+            else
+            {
+                SpriteRender.enabled=true;
+            }
         }
     }
 
@@ -154,7 +209,7 @@ public class PlayerBehavior : MonoBehaviour
         }
         else if(Dashing)
         {
-            gameObject.transform.localScale = Vector3.Lerp(PreviousScale, new Vector3(gameObject.transform.localScale.x*1.3f,0.85f,1), (Time.time-TimeStartedJumping)/JumpAnimationSpeed);
+            gameObject.transform.localScale = Vector3.Lerp(PreviousScale, new Vector3(Mathf.Abs(gameObject.transform.localScale.x)/gameObject.transform.localScale.x*1.1f,0.85f,1), (Time.time-TimeStartedJumping)/JumpAnimationSpeed);
         }
         //when they on the ground
         else if(gameObject.transform.localScale != BaseScale)
@@ -202,14 +257,54 @@ public class PlayerBehavior : MonoBehaviour
                 }
             }
         }
+        if(Dashing)
+        {
+            //Dash gravity gets progressively heavier 
+            PlayerRB.gravityScale=Mathf.Lerp(DashGravityScale,BaseGravityScale,(Time.time-TimeStartedJumping)/DashGravityAdjustSpeed);
+        }
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    public void LedgeGrab()
     {
-        
-        if(collision.gameObject.tag == "Floor")
+        if(Input.GetKeyDown(KeyCode.E))
         {
-            ResetCharacter();
+            if(!CanJump || Dashing)
+            {
+                if (DebugMode) Debug.Log("Edge Grab");
+                //Get objects of nearby
+                List<Collider2D> Ledges = new List<Collider2D>();
+                Collider2D[] NearbyObjects = Physics2D.OverlapCircleAll(gameObject.transform.position,EdgeGrabRadius,1 << LayerMask.NameToLayer("Player"));
+                
+                //Weeeeeed em out 
+                for (int i = 0; i < NearbyObjects.Length; i++)
+                {
+                    GameObject Object = NearbyObjects[i].gameObject;
+                    
+                    //Item cant be grabbed if:
+                    //it isnt a platform
+                    //it is below the player
+                    if(Object.transform.position.y<gameObject.transform.position.y-0.5f)
+                    {
+                        //NearbyObjects.RemoveAt(i);
+                        //i--;
+                        continue;
+                    }
+                    else if( !(Object.tag == "Floor" || Object.tag == "Platform" || Object.tag == "Moving Platform"))
+                    {
+                        //NearbyObjects.RemoveAt(i);
+                        //i--;
+                        continue;
+                    }
+                    if (DebugMode) Debug.Log(Object.tag);
+                    Ledges.Add(NearbyObjects[i]);
+                }
+                Debug.Log(Ledges);
+
+                if(Ledges.Count!=0)
+                {
+                    if (DebugMode) Debug.Log(Ledges[0].gameObject.name);
+                }
+            }
         }
         
     }
@@ -253,4 +348,44 @@ public class PlayerBehavior : MonoBehaviour
         
         Arm.FirstRodeo = true;
     }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        
+        if(collision.gameObject.tag == "Floor" || collision.gameObject.tag=="Moving Platform")
+        {
+            if(collision.gameObject.transform.position.y < gameObject.transform.position.y)
+            {
+                ResetCharacter();
+            }
+        }
+        if (collision.gameObject.tag == "Booster")
+        {
+            InsideJumpBoost=true;
+        }
+        if(collision.gameObject.tag == "Platform")
+        {
+            Dashing=false;
+        }
+    }
+    
+    private void OnTriggerEnter2D(Collider2D collider)
+    {
+        if (collider.gameObject.tag == "Booster")
+        {
+            InsideJumpBoost=true;
+        }
+    
+    }
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.gameObject.tag == "Booster")
+        {
+            InsideJumpBoost=false;
+        }
+    }
 }
+
+    
+
+    

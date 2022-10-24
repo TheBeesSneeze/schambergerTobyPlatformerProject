@@ -19,6 +19,8 @@ public class JumpBoostBehavior : MonoBehaviour
     public Vector4 OnColor = new Vector4 (0, 250, 0, 1);
     public Vector4 OffColor = new Vector4 (250, 0, 0, 1);
 
+    private bool Inside = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -32,19 +34,56 @@ public class JumpBoostBehavior : MonoBehaviour
         {
             ToggleBoost();
         }
+        //if player jumps while inside boost area, it boosts (wow)
+        if(Inside)
+        {
+            if(Input.GetKeyDown(KeyCode.Space) || LittleGuy.Dashing)
+            {
+                Boost();
+            }
+        }
+
+        
     }
 
     //When player interracts with [this thing], the player is launched up a little, their double jump is refilled, [this thing] is destroyed
     private void OnTriggerEnter2D(Collider2D collider)
     {//would it be more efficient to move this into the player?
-        
+                //no
         if(collider.gameObject.tag=="Player")
         {
-            Debug.Log("Jump Boost");
-            LittleGuy.CanDoubleJump = true;
-            LittleGuy.PlayerRB.AddForce(BoostForce);
-            ToggleBoost();
+            Inside = true;
         }
+    }
+
+    private void OnTriggerExit2D(Collider2D collider)
+    {
+        if(collider.gameObject.tag=="Player")
+        {
+            Inside = false;
+        }
+    }
+
+    private Vector2 MirrorMultiplier = new Vector2(-1,1);
+    //actually jump
+    public void Boost()
+    {
+        Debug.Log("Jump Boost");
+
+        LittleGuy.Dashing=false;
+        LittleGuy.Jumping=true;
+        LittleGuy.CanDoubleJump = true;
+
+        ToggleBoost();
+        if(LittleGuy.FacingRight)
+        {
+            LittleGuy.PlayerRB.velocity=BoostForce;
+        }
+        else
+        {
+            LittleGuy.PlayerRB.velocity=BoostForce*MirrorMultiplier;
+        }
+        
     }
 
     //turns on/off the boost
@@ -55,11 +94,13 @@ public class JumpBoostBehavior : MonoBehaviour
 
         if(BoostReady)
         {
-            
+            SpriteRenderer.material.SetColor("_Color", Color.green);
         }
         else
         {
             TimeOfCollision = Time.time;
+            SpriteRenderer.material.SetColor("_Color", Color.grey);
+
         }
     }
 }

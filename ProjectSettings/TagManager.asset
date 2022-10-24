@@ -6,21 +6,28 @@ TagManager:
   tags:
   - Platform
   - Floor
+  - Booster
+  - Spring
+  - Moving Platform
+  - Win Condition
+  - Enemy
+  - Camera
+  - Fragile Platform
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Platform
   - Water
   - UI
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Floor
+  - Enemy
+  - Camera
+  - Jump Boost
+  - Moving Platform
+  - Spring
+  - Player
+  - Win Condition
   - 
   - 
   - 
