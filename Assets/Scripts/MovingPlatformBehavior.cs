@@ -35,6 +35,9 @@ public class MovingPlatformBehavior : MonoBehaviour
     void Start()
     {
         StartingPoint=gameObject.transform.position;
+
+        LittleGuy=GameObject.FindGameObjectWithTag("Player");
+        LittleGuyBehavior = LittleGuy.GetComponent<PlayerBehavior>();
     }
 
     // Update is called once per frame
@@ -65,6 +68,8 @@ public class MovingPlatformBehavior : MonoBehaviour
                 if(TouchingPlayer)
                 {
                     LittleGuyBehavior.CanJump=false;
+                    LittleGuyBehavior.CanGroundPound = true;
+                    LittleGuyBehavior.GroundPounding = false;
                     LittleGuyBehavior.PlayerRB.AddForce(EndingBoostForce);
                 }
                 LittleGuy.gameObject.transform.parent = null;
@@ -79,10 +84,11 @@ public class MovingPlatformBehavior : MonoBehaviour
             Speed = Mathf.Lerp(BaseSpeed/2,MaxSpeed/2,(Time.time-TimeOfChange)/ReturnSpeed);
             gameObject.transform.position = Vector2.Lerp(gameObject.transform.position,StartingPoint,Speed);
             
-            Vector2 pos = gameObject.transform.position*10;
+            Vector2 pos = gameObject.transform.position;
 
             //Come to a stop
-            if(Mathf.Round(pos.x) == Mathf.Round(StartingPoint.x*10) && Mathf.Round(pos.y) == Mathf.Round(StartingPoint.y*10))
+            //if(Mathf.Round(pos.x) == Mathf.Round(StartingPoint.x*10) && Mathf.Round(pos.y) == Mathf.Round(StartingPoint.y*10))
+            if(Mathf.Approximately(pos.x,StartingPoint.x) && Mathf.Approximately(pos.y,StartingPoint.y))
             {
                 MovingBackwards=false;
                 TimeOfChange=Time.time;
@@ -94,12 +100,11 @@ public class MovingPlatformBehavior : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         TimeOfChange=Time.time;
-        LittleGuy.gameObject.transform.SetParent(gameObject.transform,true);
-
+        
         if(collision.gameObject.tag=="Player")
         {
             TouchingPlayer = true;
-            //LittleGuy.transform.SetParent(gameObject);
+            LittleGuy.gameObject.transform.SetParent(gameObject.transform,true);
         }
     }
 

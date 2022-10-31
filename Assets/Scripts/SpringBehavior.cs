@@ -29,6 +29,8 @@ public class SpringBehavior : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        GameObject LittleGuyGameObject=GameObject.FindGameObjectWithTag("Player");
+        LittleGuy = LittleGuyGameObject.GetComponent<PlayerBehavior>();
     }
 
     // Update is called once per frame
@@ -63,17 +65,25 @@ public class SpringBehavior : MonoBehaviour
                     
                     LittleGuy.CanJump=false;
                     LittleGuy.OnSpring=true;
-                    if(!LittleGuy.Dashing)
-                    {
+                    LittleGuy.CanGroundPound = true;
+                    LittleGuy.GroundPounding=false;
+                    //if(!LittleGuy.Dashing)
+                    //{
                         LittleGuy.CanDoubleJump=true;
-                    }
+                    //}
 
                     //if player is going faster than BounceVelY, their new velocity will be in the middle of their old one and BounceVelocity
                     float NewVel = MinVelocityOutput;
 
-                    //player can jump higher if theyre already going faster than min velocity
-                    if(Mathf.Abs(vel.y)>=MinVelocityOutput)
+                    //Ground pounding make em go zooom
+                    if(LittleGuy.GroundPounding)
                     {
+                        NewVel = MaxVelocityOutput;
+                    }
+                    
+                    //player can jump higher if theyre already going faster than min velocity
+                    else if(Mathf.Abs(vel.y)>=MinVelocityOutput)
+                    {   
                         NewVel = -vel.y * VelocityMultiplier;
 
                         if(NewVel>MaxVelocityOutput)

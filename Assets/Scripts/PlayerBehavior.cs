@@ -7,6 +7,7 @@ public class PlayerBehavior : MonoBehaviour
     public ArmBehavior Arm;
     public Rigidbody2D PlayerRB;
     public SpriteRenderer SpriteRender;
+    public SwingingBehavior SwingBehavior;
 
     // Variables for as far as the eye can see...
 
@@ -31,8 +32,10 @@ public class PlayerBehavior : MonoBehaviour
 
     public bool CanJump = true;
     public bool CanDoubleJump = true;
+    public bool CanGroundPound = true;
     public bool Jumping = false;
     public bool Dashing = false;
+    public bool GroundPounding = false;
     public bool FacingRight = true;
 
     public bool Stunned = false;
@@ -43,6 +46,8 @@ public class PlayerBehavior : MonoBehaviour
     public float DashGravityScale = 1f;
 
     public float DashGravityAdjustSpeed = 40; //yep those are certainly words in a variable name
+    public float VerticalGroundPoundVelocityMultiplier=1.1f;
+    public float HorizontalGroundPoundVelocity=0.2f;
 
     public float SlowAscentModifier = 0.8f;
     public float SlowDescentModifier = 0.8f;
@@ -50,7 +55,7 @@ public class PlayerBehavior : MonoBehaviour
     public float FastAscentModifier = 1.3f;
     public float FastDescentModifier = 1.4f;
 
-    private bool InsideJumpBoost = false;
+    public bool InsideJumpBoost = false;
     public bool OnSpring = false;
 
     private float xMove=0;
@@ -85,18 +90,21 @@ public class PlayerBehavior : MonoBehaviour
         }
         FaceDirection();
 
+        GroundPound();
+
         //Jump
             // When the player starts to descend, their mass will increase. If the player holds down space however, their mass will not increase and they will fall a bit faster
-        if(Input.GetKeyDown(KeyCode.Space) && !Stunned)
+        if(Input.GetKeyDown(KeyCode.Space) && !Stunned && !SwingBehavior.Swinging && !InsideJumpBoost)
         {
             Jumps();
         }
+
         AnimateJump();
 
         //Speed up descent
         AdjustJump();
 
-        LedgeGrab();
+        //LedgeGrab();
 
     }
 
@@ -131,12 +139,14 @@ public class PlayerBehavior : MonoBehaviour
     public void Jumps()
     {
         //Regular Jump
-        if(CanJump && !OnSpring)
+        if(CanJump && !OnSpring )
         {
             if(DebugMode) Debug.Log("Jump");
     
             Jumping = true;
             CanJump = false;
+            GroundPounding = false;
+            CanGroundPound = true;
 
             PlayerRB.AddForce(JumpForce);
 
@@ -145,13 +155,15 @@ public class PlayerBehavior : MonoBehaviour
             PreviousScale = gameObject.transform.localScale;
         }
         //Double Jump
-        else if (CanDoubleJump && !InsideJumpBoost)
+        else if (CanDoubleJump)
         {
             if (DebugMode) Debug.Log("Dash");
 
             Jumping = false;
             Dashing = true;
             CanDoubleJump = false;
+            GroundPounding = false;
+            CanGroundPound = true;
             
             Vector2 DashVelocity = new Vector2(DashVelocityX*Speed/WalkSpeed,DashVelocityY);
             // negative X value if facing left
@@ -218,10 +230,33 @@ public class PlayerBehavior : MonoBehaviour
         }
     }
 
+    //Lock x movement and just go down
+    //Player can almost always ground pound if they arent on the ground
+    public void GroundPound()
+    {
+        //Start ground pound
+        if((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.S)) && CanGroundPound )
+        {
+            GroundPounding=true;
+            Dashing=false;
+            Jumping=false;
+            SwingBehavior.Swinging=false;
+
+            PlayerRB.velocity *= new Vector2(0,1.1f);
+        }
+
+        if(GroundPounding)
+        {
+            Speed = HorizontalGroundPoundVelocity;
+        }
+        
+        
+    }
+
     //Essentially, it lets the player control the height / speed of their jump by holding space
     public void AdjustJump()
     {
-        if(Jumping)
+        if(Jumping && !InsideJumpBoost)
         {
             //going down
             if(PlayerRB.velocity.y<0)
@@ -338,8 +373,10 @@ public class PlayerBehavior : MonoBehaviour
 
         CanDoubleJump = true;
         CanJump = true;
+        CanGroundPound = false;
         Jumping = false;
         Dashing = false;
+        GroundPounding = false;
 
         //animation stuff
         PreviousScale = gameObject.transform.localScale;
@@ -354,10 +391,7 @@ public class PlayerBehavior : MonoBehaviour
         
         if(collision.gameObject.tag == "Floor" || collision.gameObject.tag=="Moving Platform")
         {
-            if(collision.gameObject.transform.position.y < gameObject.transform.position.y)
-            {
-                ResetCharacter();
-            }
+            ResetCharacter();
         }
         if (collision.gameObject.tag == "Booster")
         {

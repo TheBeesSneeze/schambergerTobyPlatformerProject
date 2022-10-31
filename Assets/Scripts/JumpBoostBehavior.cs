@@ -25,6 +25,9 @@ public class JumpBoostBehavior : MonoBehaviour
     void Start()
     {
         SpriteRenderer = gameObject.GetComponent<Renderer>();
+
+        GameObject LittleGuyGameObject=GameObject.FindGameObjectWithTag("Player");
+        LittleGuy = LittleGuyGameObject.GetComponent<PlayerBehavior>();
     }
 
     // Update is called once per frame
@@ -37,13 +40,12 @@ public class JumpBoostBehavior : MonoBehaviour
         //if player jumps while inside boost area, it boosts (wow)
         if(Inside)
         {
-            if(Input.GetKeyDown(KeyCode.Space) || LittleGuy.Dashing)
+            if(Input.GetKey(KeyCode.Space)||Input.GetKeyDown(KeyCode.Space))
             {
                 Boost();
             }
         }
 
-        
     }
 
     //When player interracts with [this thing], the player is launched up a little, their double jump is refilled, [this thing] is destroyed
@@ -77,7 +79,7 @@ public class JumpBoostBehavior : MonoBehaviour
         ToggleBoost();
         if(LittleGuy.FacingRight)
         {
-            LittleGuy.PlayerRB.velocity=BoostForce;
+            LittleGuy.PlayerRB.velocity*=BoostForce;
         }
         else
         {

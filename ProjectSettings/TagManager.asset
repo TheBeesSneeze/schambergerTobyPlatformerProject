@@ -13,6 +13,7 @@ TagManager:
   - Enemy
   - Camera
   - Fragile Platform
+  - Swing
   layers:
   - Default
   - TransparentFX

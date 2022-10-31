@@ -37,6 +37,9 @@ public class EnemyBehavior : MonoBehaviour
         EnemyCollider = GetComponent<Collider2D>();
         SpriteRender = gameObject.GetComponent<SpriteRenderer>();
         BaseColor=SpriteRender.material.color;
+
+        GameObject LittleGuyGameObject=GameObject.FindGameObjectWithTag("Player");
+        LittleGuy = LittleGuyGameObject.GetComponent<PlayerBehavior>();
     }
 
     // Update is called once per frame
@@ -52,11 +55,15 @@ public class EnemyBehavior : MonoBehaviour
         //Booleans so less math
         if(MoveBy.x!=0)
         {
-            xpos = StartPosition.x + Mathf.PingPong(Time.time/MoveSpeed,MoveBy.x);
+            if(MoveBy.x<0) xpos = StartPosition.x - Mathf.PingPong(Time.time/MoveSpeed,MoveBy.x);
+            else xpos = StartPosition.x + Mathf.PingPong(Time.time/MoveSpeed,MoveBy.x);
+            
+
         }
         if(MoveBy.y!=0)
         {
-            ypos = StartPosition.y + Mathf.PingPong(Time.time/MoveSpeed,MoveBy.y);
+            if(MoveBy.y<0) ypos = StartPosition.y - Mathf.PingPong(Time.time/MoveSpeed,MoveBy.y);
+            else ypos = StartPosition.y + Mathf.PingPong(Time.time/MoveSpeed,MoveBy.y);
         }
         gameObject.transform.position = new Vector2(xpos,ypos);
     }
@@ -128,7 +135,6 @@ public class EnemyBehavior : MonoBehaviour
 
     void OnBecameInvisible()
     {
-        Debug.Log("n");
         Dead = false;
         SpriteRender.material.color=BaseColor;
     }

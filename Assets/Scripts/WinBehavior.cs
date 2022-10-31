@@ -5,9 +5,9 @@ using UnityEngine.SceneManagement;
 
 public class WinBehavior : MonoBehaviour
 {
-    public PlayerBehavior LittleGuy;
+    //public PlayerBehavior LittleGuy;
 
-    public string SceneName="Level";
+    public int SceneToLoad = 0;
 
     // Start is called before the first frame update
     void Start()
@@ -22,20 +22,14 @@ public class WinBehavior : MonoBehaviour
     }
 
     //i dont know how to get this code working man
-    public void SendPlayerTo(string scene)
-    {
-        Scene SceneToLoad = SceneManager.GetSceneByName(scene);
-        SceneManager.LoadScene(SceneToLoad.name, LoadSceneMode.Additive);
-        SceneManager.LoadScene(SceneToLoad.name);
-        SceneManager.MoveGameObjectToScene(LittleGuy.gameObject, SceneToLoad);
-                     
-    }
 
     public void OnTriggerEnter2D(Collider2D collider)
     {
         if(collider.gameObject.tag=="Player")
         {
             Debug.Log("Win condition met");
+            SceneManager.LoadScene(SceneToLoad);
+            //SceneManager.MoveGameObjectToScene(LittleGuy.gameObject, SceneToLoad);
         }
     }
 }

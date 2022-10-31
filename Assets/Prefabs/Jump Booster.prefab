@@ -99,7 +99,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   LittleGuy: {fileID: 0}
-  SpriteRenderer: {fileID: 0}
+  SpriteRenderer: {fileID: 350749380695868680}
   BoostForce: {x: 12, y: 15}
   BoostReady: 1
   BoostResetTime: 3
@@ -119,6 +119,6 @@ CircleCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.09396362, y: 0}
+  m_Offset: {x: 0, y: 0}
   serializedVersion: 2
-  m_Radius: 1.2047119
+  m_Radius: 2.5
