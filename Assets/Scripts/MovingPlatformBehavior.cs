@@ -11,18 +11,20 @@ public class MovingPlatformBehavior : MonoBehaviour
 {
     public PlayerBehavior LittleGuyBehavior;
     public GameObject LittleGuy;
+    public Animator MovingPlatformAnimator;
 
     private float Speed;
     public float BaseSpeed = 0.001f;
     public float MaxSpeed = 2;
     public float Acceleration = 1;
-    public float ReturnSpeed=1;
+    public float ReturnSpeed=100;
 
     public float WaitTime=0.15f;
     public float BoostDelay = 0.05f;
 
     private Vector3 StartingPoint;
     public Vector3 EndingPoint = new Vector3(0,0,0);
+    private Vector2 PointOfLast;
     public Vector2 EndingBoostForce = new Vector2(100,100);
 
     private float TimeOfChange=0;
@@ -49,10 +51,13 @@ public class MovingPlatformBehavior : MonoBehaviour
             Debug.Log("Going up");
             MovingForwards=true;
             TimeOfChange=Time.time;
+            MovingPlatformAnimator.SetBool("Moving",true);
+            PointOfLast = gameObject.transform.position;
         }
 
         if(MovingForwards)
         {
+            MovingPlatformAnimator.SetBool("Moving",true);
             //Speed gets faster
             Speed = Mathf.Lerp(BaseSpeed,MaxSpeed,(Time.time-TimeOfChange)/Acceleration);
             gameObject.transform.position = Vector2.Lerp(StartingPoint,EndingPoint,Speed);
@@ -63,6 +68,8 @@ public class MovingPlatformBehavior : MonoBehaviour
                 MovingForwards = false;
                 MovingBackwards = true;
                 TimeOfChange=Time.time;
+                MovingPlatformAnimator.SetBool("Moving",true);
+                PointOfLast = gameObject.transform.position;
 
                 //Jump!
                 if(TouchingPlayer)
@@ -82,7 +89,7 @@ public class MovingPlatformBehavior : MonoBehaviour
         {
             
             Speed = Mathf.Lerp(BaseSpeed/2,MaxSpeed/2,(Time.time-TimeOfChange)/ReturnSpeed);
-            gameObject.transform.position = Vector2.Lerp(gameObject.transform.position,StartingPoint,Speed);
+            gameObject.transform.position = Vector2.Lerp(PointOfLast,StartingPoint,(Time.time-TimeOfChange)/ReturnSpeed);
             
             Vector2 pos = gameObject.transform.position;
 
@@ -92,6 +99,7 @@ public class MovingPlatformBehavior : MonoBehaviour
             {
                 MovingBackwards=false;
                 TimeOfChange=Time.time;
+                MovingPlatformAnimator.SetBool("Moving",false);
             }
         }
         

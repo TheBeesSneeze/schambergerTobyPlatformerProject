@@ -35,12 +35,12 @@ public class JumpBoostBehavior : MonoBehaviour
     {
         if(Time.time - TimeOfCollision >= BoostResetTime && !BoostReady)
         {
-            ToggleBoost();
+            ToggleBoost(true);
         }
         //if player jumps while inside boost area, it boosts (wow)
         if(Inside)
         {
-            if(Input.GetKey(KeyCode.Space)||Input.GetKeyDown(KeyCode.Space))
+            if(Input.GetKeyDown(KeyCode.Space)||Input.GetKeyDown(KeyCode.E) ||LittleGuy.GroundPounding)
             {
                 Boost();
             }
@@ -55,6 +55,9 @@ public class JumpBoostBehavior : MonoBehaviour
         if(collider.gameObject.tag=="Player")
         {
             Inside = true;
+            LittleGuy.LittleGuyAnimator.SetBool("Jumping",true);
+            LittleGuy.LittleGuyAnimator.SetBool("Dashing",false);
+            LittleGuy.LittleGuyAnimator.SetBool("Running",false);
         }
     }
 
@@ -63,6 +66,8 @@ public class JumpBoostBehavior : MonoBehaviour
         if(collider.gameObject.tag=="Player")
         {
             Inside = false;
+            LittleGuy.LittleGuyAnimator.SetBool("Jumping",false);
+            LittleGuy.LittleGuyAnimator.SetBool("Dashing",true);
         }
     }
 
@@ -73,36 +78,49 @@ public class JumpBoostBehavior : MonoBehaviour
         Debug.Log("Jump Boost");
 
         LittleGuy.Dashing=false;
-        LittleGuy.Jumping=true;
-        LittleGuy.CanDoubleJump = true;
+        LittleGuy.Jumping=false;
+        LittleGuy.CanDoubleJump = false;
+        LittleGuy.GroundPounding=false;
+        LittleGuy.JumpBoosting=true;
 
-        ToggleBoost();
+        ToggleBoost(false);
         if(LittleGuy.FacingRight)
         {
-            LittleGuy.PlayerRB.velocity*=BoostForce;
+            LittleGuy.PlayerRB.velocity=BoostForce;
         }
         else
         {
             LittleGuy.PlayerRB.velocity=BoostForce*MirrorMultiplier;
         }
-        
+        Invoke("EndBoost",0.5f);
+        LittleGuy.LittleGuyAnimator.SetBool("Jumping",true);
+        LittleGuy.LittleGuyAnimator.SetBool("Dashing",true);
     }
 
     //turns on/off the boost
-    public void ToggleBoost()
+    public void ToggleBoost(bool TurnOn)
     {
-        BoostReady = !BoostReady;
-        GetComponent<Collider2D>().enabled=BoostReady;
+        GetComponent<Collider2D>().enabled=TurnOn;
 
-        if(BoostReady)
+        if(TurnOn)
         {
-            SpriteRenderer.material.SetColor("_Color", Color.green);
+            BoostReady=true;
         }
         else
         {
             TimeOfCollision = Time.time;
-            SpriteRenderer.material.SetColor("_Color", Color.grey);
+            BoostReady=false;
 
         }
+    }
+
+    //Stops the player mid air!
+    public void EndBoost()
+    {
+        ToggleBoost(true);
+        LittleGuy.Jumping=true;
+        LittleGuy.CanDoubleJump = true;
+        LittleGuy.JumpBoosting=false;
+        
     }
 }

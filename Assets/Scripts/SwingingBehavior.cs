@@ -43,7 +43,7 @@ public class SwingingBehavior : MonoBehaviour
             if(DisanceFromSwing <= MaxDistance)
             {
                 Swinging = true;
-                Physics2D.autoSimulation = false;
+                //Physics2D.autoSimulation = false;
 
                 LittleGuy.CanJump=false;
                 LittleGuy.CanDoubleJump=false;
@@ -55,7 +55,7 @@ public class SwingingBehavior : MonoBehaviour
 
         if(Input.GetKeyDown(KeyCode.Space) && Swinging)
         {
-            Physics2D.autoSimulation = true;
+            //Physics2D.autoSimulation = true;
             SwingJump();
             
             Swinging = false;

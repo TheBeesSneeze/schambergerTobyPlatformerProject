@@ -66,7 +66,7 @@ public class SpringBehavior : MonoBehaviour
                     LittleGuy.CanJump=false;
                     LittleGuy.OnSpring=true;
                     LittleGuy.CanGroundPound = true;
-                    LittleGuy.GroundPounding=false;
+                    
                     //if(!LittleGuy.Dashing)
                     //{
                         LittleGuy.CanDoubleJump=true;
@@ -79,6 +79,7 @@ public class SpringBehavior : MonoBehaviour
                     if(LittleGuy.GroundPounding)
                     {
                         NewVel = MaxVelocityOutput;
+                        LittleGuy.GroundPounding=false;
                     }
                     
                     //player can jump higher if theyre already going faster than min velocity
@@ -95,7 +96,7 @@ public class SpringBehavior : MonoBehaviour
                             NewVel = MinVelocityOutput;
                         }
                     }
-
+                    
                     //if they arent going fast enough, they will still jump at MinVelocityOutput
 
                     Debug.Log(NewVel);

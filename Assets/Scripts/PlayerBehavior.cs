@@ -9,6 +9,8 @@ public class PlayerBehavior : MonoBehaviour
     public SpriteRenderer SpriteRender;
     public SwingingBehavior SwingBehavior;
 
+    public Animator LittleGuyAnimator;
+
     // Variables for as far as the eye can see...
 
     public bool DebugMode=false;
@@ -18,7 +20,7 @@ public class PlayerBehavior : MonoBehaviour
     public float RunSpeed = 20;
     public float StunDuration = 0.75f;
 
-    public float EdgeGrabRadius = 2;
+    public Vector2 EdgeGrabArea = new Vector2(2,2);
 
     public float TimeStartedMoving;
     public float TimeStartedJumping;
@@ -30,12 +32,14 @@ public class PlayerBehavior : MonoBehaviour
     public float DashVelocityY = 150;
     public Vector2 AddedJumpForce = new Vector2(0,1.5f);//the amount the player increased each frame bc of holding space
 
+    //Because I only learned about states after
     public bool CanJump = true;
     public bool CanDoubleJump = true;
     public bool CanGroundPound = true;
     public bool Jumping = false;
     public bool Dashing = false;
     public bool GroundPounding = false;
+    public bool JumpBoosting = false;
     public bool FacingRight = true;
 
     public bool Stunned = false;
@@ -56,6 +60,7 @@ public class PlayerBehavior : MonoBehaviour
     public float FastDescentModifier = 1.4f;
 
     public bool InsideJumpBoost = false;
+    public bool InsideJelly = false;
     public bool OnSpring = false;
 
     private float xMove=0;
@@ -72,6 +77,8 @@ public class PlayerBehavior : MonoBehaviour
         TimeStartedMoving = Time.time;
 
         ResetCharacter();
+
+        layer_mask = LayerMask.GetMask("Platform","Floor");
     }
 
     // Update is called once per frame
@@ -87,6 +94,7 @@ public class PlayerBehavior : MonoBehaviour
         {
             TimeStartedMoving = Time.time;
             Speed = WalkSpeed;
+            
         }
         FaceDirection();
 
@@ -94,11 +102,11 @@ public class PlayerBehavior : MonoBehaviour
 
         //Jump
             // When the player starts to descend, their mass will increase. If the player holds down space however, their mass will not increase and they will fall a bit faster
-        if(Input.GetKeyDown(KeyCode.Space) && !Stunned && !SwingBehavior.Swinging && !InsideJumpBoost)
+        if(Input.GetKeyDown(KeyCode.Space) && !Stunned && !SwingBehavior.Swinging && !InsideJumpBoost && !JumpBoosting)
         {
             Jumps();
         }
-
+        if(Jumping)
         AnimateJump();
 
         //Speed up descent
@@ -106,6 +114,7 @@ public class PlayerBehavior : MonoBehaviour
 
         //LedgeGrab();
 
+        Animate();
     }
 
     void FixedUpdate()
@@ -125,45 +134,43 @@ public class PlayerBehavior : MonoBehaviour
     {
         //Flip the sprite pretty much
         //                                   Turn to left                                                              Turn to right
-        if(((Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D) && FacingRight) || (Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A) && !FacingRight)) && CanDoubleJump ) //turn left
+        if(((Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D) && FacingRight) || (Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A) && !FacingRight)) && (CanDoubleJump || InsideJelly) ) //turn left
         {
             FacingRight=!FacingRight;
             BaseScale[0] *= -1;
             PreviousScale = BaseScale;
             gameObject.transform.localScale = BaseScale;
+            LittleGuyAnimator.SetBool("Dashing",false);
         }
     }
     
+    public void Animate()
+    {
+        LittleGuyAnimator.SetBool("Jumping",Jumping);
+        LittleGuyAnimator.SetBool("Ground Pounding",GroundPounding);
+    }
+
     Vector3 PreviousScale = new Vector3(1,1,1);
     //Manages Jumps and Double Jumps. is triggered when user presses space
     public void Jumps()
     {
+        GroundPounding = false;
+
         //Regular Jump
-        if(CanJump && !OnSpring )
+        if(CanJump && !OnSpring && !InsideJelly)
         {
-            if(DebugMode) Debug.Log("Jump");
-    
-            Jumping = true;
-            CanJump = false;
-            GroundPounding = false;
-            CanGroundPound = true;
-
-            PlayerRB.AddForce(JumpForce);
-
-            //animation stuff
-            TimeStartedJumping = Time.time;
-            PreviousScale = gameObject.transform.localScale;
+            Jump();
         }
         //Double Jump
-        else if (CanDoubleJump)
+        else if (CanDoubleJump && !InsideJumpBoost)
         {
             if (DebugMode) Debug.Log("Dash");
 
             Jumping = false;
             Dashing = true;
             CanDoubleJump = false;
-            GroundPounding = false;
             CanGroundPound = true;
+            GroundPounding=false;
             
             Vector2 DashVelocity = new Vector2(DashVelocityX*Speed/WalkSpeed,DashVelocityY);
             // negative X value if facing left
@@ -171,14 +178,47 @@ public class PlayerBehavior : MonoBehaviour
             {
                 DashVelocity = new Vector2(DashVelocity.x*-1,DashVelocityY);
             }
-
+            
             PlayerRB.velocity=DashVelocity;
             PlayerRB.gravityScale=DashGravityScale;
 
             //animation stuff
             TimeStartedJumping = Time.time;
             PreviousScale = gameObject.transform.localScale;
+
+            Invoke("CancelDash",0.5f);
+            LittleGuyAnimator.SetBool("Dashing",true);
         }
+
+        CancelDash();
+        
+    }
+
+    public void Jump()
+    {
+        if(DebugMode) Debug.Log("Jump");
+    
+        Jumping = true;
+        CanJump = false;
+        CanGroundPound = true;
+
+        PlayerRB.velocity = new Vector2(PlayerRB.velocity.x,0);
+        PlayerRB.AddForce(JumpForce);
+
+        //animation stuff
+        TimeStartedJumping = Time.time;
+        PreviousScale = gameObject.transform.localScale;
+        LittleGuyAnimator.SetBool("Running",false);
+    }
+
+    public void CancelDash()
+    {
+        if(Dashing)
+        {
+            Dashing=false;
+            CanDoubleJump=false;
+        }
+        
     }
 
     public void BeStunned()
@@ -235,7 +275,7 @@ public class PlayerBehavior : MonoBehaviour
     public void GroundPound()
     {
         //Start ground pound
-        if((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.S)) && CanGroundPound )
+        if((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.S)) && CanGroundPound)
         {
             GroundPounding=true;
             Dashing=false;
@@ -256,88 +296,71 @@ public class PlayerBehavior : MonoBehaviour
     //Essentially, it lets the player control the height / speed of their jump by holding space
     public void AdjustJump()
     {
-        if(Jumping && !InsideJumpBoost)
+        if(!InsideJumpBoost && !InsideJelly)
         {
-            //going down
-            if(PlayerRB.velocity.y<0)
+            if(Jumping)
             {
-                //Fast descent
-                if(!Input.GetKey(KeyCode.Space))
+                //going down
+                if(PlayerRB.velocity.y<0)
                 {
-                    PlayerRB.mass = BaseMass * FastDescentModifier;
-                    PlayerRB.gravityScale = BaseGravityScale * FastDescentModifier;
+                    //Fast descent
+                    if(!Input.GetKey(KeyCode.Space))
+                    {
+                        PlayerRB.mass = BaseMass * FastDescentModifier;
+                        PlayerRB.gravityScale = BaseGravityScale * FastDescentModifier;
+                    }
+                    //Slow descent
+                    else
+                    {
+                        PlayerRB.mass = BaseMass * SlowDescentModifier;
+                        PlayerRB.gravityScale = BaseGravityScale * SlowDescentModifier;
+                    }
                 }
-                //Slow descent
+
+                //going up
                 else
                 {
-                    PlayerRB.mass = BaseMass * SlowDescentModifier;
-                    PlayerRB.gravityScale = BaseGravityScale * SlowDescentModifier;
+                    //Debug.Log(PlayerRB.position);
+                    //player jumps higher
+                    if(Input.GetKey(KeyCode.Space))
+                    {
+                        PlayerRB.AddForce(AddedJumpForce);
+                    }
+                    //player jumps a little lower and faster
+                    else
+                    {
+                        PlayerRB.mass = BaseMass*SlowAscentModifier;
+                        PlayerRB.gravityScale = BaseGravityScale*SlowAscentModifier;
+                    }
                 }
             }
-
-            //going up
-            else
+            if(Dashing&&!InsideJumpBoost)
             {
-                //Debug.Log(PlayerRB.position);
-                //player jumps higher
-                if(Input.GetKey(KeyCode.Space))
-                {
-                    PlayerRB.AddForce(AddedJumpForce);
-                }
-                //player jumps a little lower and faster
-                else
-                {
-                    PlayerRB.mass = BaseMass*SlowAscentModifier;
-                    PlayerRB.gravityScale = BaseGravityScale*SlowAscentModifier;
-                }
+                //Dash gravity gets progressively heavier 
+                PlayerRB.gravityScale=Mathf.Lerp(DashGravityScale,BaseGravityScale,(Time.time-TimeStartedJumping)/DashGravityAdjustSpeed);
             }
         }
-        if(Dashing)
+        else
         {
-            //Dash gravity gets progressively heavier 
-            PlayerRB.gravityScale=Mathf.Lerp(DashGravityScale,BaseGravityScale,(Time.time-TimeStartedJumping)/DashGravityAdjustSpeed);
+            PlayerRB.gravityScale = 2;
         }
     }
+
+    public int layer_mask;
 
     public void LedgeGrab()
     {
         if(Input.GetKeyDown(KeyCode.E))
         {
-            if(!CanJump || Dashing)
+            if(true)
             {
-                if (DebugMode) Debug.Log("Edge Grab");
-                //Get objects of nearby
-                List<Collider2D> Ledges = new List<Collider2D>();
-                Collider2D[] NearbyObjects = Physics2D.OverlapCircleAll(gameObject.transform.position,EdgeGrabRadius,1 << LayerMask.NameToLayer("Player"));
-                
-                //Weeeeeed em out 
-                for (int i = 0; i < NearbyObjects.Length; i++)
-                {
-                    GameObject Object = NearbyObjects[i].gameObject;
-                    
-                    //Item cant be grabbed if:
-                    //it isnt a platform
-                    //it is below the player
-                    if(Object.transform.position.y<gameObject.transform.position.y-0.5f)
-                    {
-                        //NearbyObjects.RemoveAt(i);
-                        //i--;
-                        continue;
-                    }
-                    else if( !(Object.tag == "Floor" || Object.tag == "Platform" || Object.tag == "Moving Platform"))
-                    {
-                        //NearbyObjects.RemoveAt(i);
-                        //i--;
-                        continue;
-                    }
-                    if (DebugMode) Debug.Log(Object.tag);
-                    Ledges.Add(NearbyObjects[i]);
-                }
-                Debug.Log(Ledges);
 
-                if(Ledges.Count!=0)
+                //Physics2D.BoxCast(transform.position,EdgeGrabArea,0,new Vector2(1,1),1)
+                RaycastHit2D Ray = Physics2D.Raycast(transform.position, new Vector2(1,1),2,layer_mask);
+                if (Ray.collider!=null)
                 {
-                    if (DebugMode) Debug.Log(Ledges[0].gameObject.name);
+                    //Output the name of the Collider your Box hit
+                    Debug.Log("Hit : " + Ray.collider.name);
                 }
             }
         }
@@ -351,15 +374,18 @@ public class PlayerBehavior : MonoBehaviour
             if(Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D))
             {
                 TimeStartedMoving = Time.time;
+                
             }
             else if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D))
             {
                 Speed=Mathf.Lerp(WalkSpeed,RunSpeed,(Time.time-TimeStartedMoving)/4);
+                LittleGuyAnimator.SetBool("Running",true);
             }
             //user is not pressing A or D, decrease speed
             else
             {
                 Speed = WalkSpeed;
+                LittleGuyAnimator.SetBool("Running",false);
             }
         }
         
@@ -377,6 +403,7 @@ public class PlayerBehavior : MonoBehaviour
         Jumping = false;
         Dashing = false;
         GroundPounding = false;
+        JumpBoosting = false;
 
         //animation stuff
         PreviousScale = gameObject.transform.localScale;
@@ -384,18 +411,16 @@ public class PlayerBehavior : MonoBehaviour
         //gameObject.transform.localScale = BaseScale;
         
         Arm.FirstRodeo = true;
+        LittleGuyAnimator.SetBool("Dashing",false);
     }
 
+    
     private void OnCollisionEnter2D(Collision2D collision)
     {
         
-        if(collision.gameObject.tag == "Floor" || collision.gameObject.tag=="Moving Platform")
+        if(collision.gameObject.tag == "Floor" || collision.gameObject.tag=="Moving Platform" || collision.gameObject.tag=="Platform")
         {
             ResetCharacter();
-        }
-        if (collision.gameObject.tag == "Booster")
-        {
-            InsideJumpBoost=true;
         }
         if(collision.gameObject.tag == "Platform")
         {
@@ -403,11 +428,16 @@ public class PlayerBehavior : MonoBehaviour
         }
     }
     
+    private bool CouldDoubleJump=false;
     private void OnTriggerEnter2D(Collider2D collider)
     {
         if (collider.gameObject.tag == "Booster")
         {
             InsideJumpBoost=true;
+            CouldDoubleJump=CanDoubleJump;
+            CanDoubleJump=false;
+            PlayerRB.gravityScale = 2;
+            PlayerRB.velocity = new Vector2(PlayerRB.velocity.x,PlayerRB.velocity.y/4);
         }
     
     }
@@ -416,6 +446,9 @@ public class PlayerBehavior : MonoBehaviour
         if (collision.gameObject.tag == "Booster")
         {
             InsideJumpBoost=false;
+
+            if(CouldDoubleJump)CanDoubleJump=true;
+            PlayerRB.gravityScale = BaseGravityScale;
         }
     }
 }
