@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class DeathZone : MonoBehaviour
 {
+    //Dont forget checkpoint # is stored in the sorting layer
+
     public PlayerBehavior LittleGuy;
 
     public GameObject RespawnAnchor;
@@ -22,14 +24,11 @@ public class DeathZone : MonoBehaviour
     void OnCollisionEnter2D(Collision2D collision)
     {
         //KILL
-        collision.gameObject.SetActive(false);
 
         if(collision.gameObject.tag=="Player")
         {
             //i mean, ideally, there shouldve been a wait here yknow
-            LittleGuy.gameObject.SetActive(true);
-            LittleGuy.gameObject.transform.position = RespawnAnchor.transform.position;
-
+            LittleGuy.gameObject.transform.position = GameObject.Find("Checkpoint "+LittleGuy.Checkpoint).transform.position;
         }
         
     }

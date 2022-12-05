@@ -99,8 +99,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LittleGuy: {fileID: 0}
   ThisSprite: {fileID: 3826000843538121147}
+  StopLightAnimator: {fileID: 0}
   AllImg: {fileID: -1600075641, guid: b27f968b00f08a64087e6a6205c3235a, type: 3}
   RedImg: {fileID: -1568913240, guid: b27f968b00f08a64087e6a6205c3235a, type: 3}
   YelImg: {fileID: 283345967, guid: b27f968b00f08a64087e6a6205c3235a, type: 3}
   GrnImg: {fileID: 2027345829, guid: b27f968b00f08a64087e6a6205c3235a, type: 3}
   OffImg: {fileID: -1643438084, guid: b27f968b00f08a64087e6a6205c3235a, type: 3}
+  StaticFrame1: {fileID: -1989758799, guid: b27f968b00f08a64087e6a6205c3235a, type: 3}
+  StaticFrame2: {fileID: 1806356437, guid: b27f968b00f08a64087e6a6205c3235a, type: 3}
+  StaticFrame3: {fileID: -465867377, guid: b27f968b00f08a64087e6a6205c3235a, type: 3}

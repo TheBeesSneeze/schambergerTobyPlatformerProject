@@ -15,6 +15,9 @@ TagManager:
   - Fragile Platform
   - Swing
   - Prop
+  - Freeze
+  - Wall
+  - Checkpoint
   layers:
   - Default
   - TransparentFX

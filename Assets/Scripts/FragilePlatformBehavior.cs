@@ -60,22 +60,26 @@ public class FragilePlatformBehavior : MonoBehaviour
     {
         if(collision.gameObject.tag=="Player")
         {
-            LittleGuy.Dashing=false;
-            LittleGuy.Jumping=false;
-            LittleGuy.CanJump=true;
-            LittleGuy.CanDoubleJump = true;
+            Debug.Log("Fragile Platform Collision");
 
             if(LittleGuy.GroundPounding)
             {
+                Debug.Log("Broken with Ground Pound");
                 WillBreak = false;
                 Broken = true;
 
                 //SpriteRender.material.color = new Vector4(0,0,0,0);
                 SpriteRender.enabled=false;
                 collider.enabled=false;
+                TimeOfCollision= Time.time-1;
             }
             else if(!WillBreak)
             {
+                LittleGuy.Dashing=false;
+                LittleGuy.Jumping=false;
+                LittleGuy.CanJump=true;
+                LittleGuy.CanDoubleJump = true;
+
                 WillBreak = true;
                 TimeOfCollision = Time.time;
             }

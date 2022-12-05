@@ -9,6 +9,7 @@ using UnityEngine;
 public class SpringBehavior : MonoBehaviour
 {
     public PlayerBehavior LittleGuy;
+    public AudioSource Soundy;
 
     public bool BounceUp=false;
     public bool BounceDown=false;
@@ -26,6 +27,8 @@ public class SpringBehavior : MonoBehaviour
     public float MinVelocityOutput=25;
     public float MaxVelocityOutput=35;
 
+    public bool JumpBoost=false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -33,19 +36,11 @@ public class SpringBehavior : MonoBehaviour
         LittleGuy = LittleGuyGameObject.GetComponent<PlayerBehavior>();
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        if(Time.time - JumpWindow >= TimeOfBounce)
-        {
-            //LittleGuy.OnSpring=false;
-        }
-    }
-
     public void OnCollisionEnter2D(Collision2D collision)
     {
         if(collision.gameObject.tag=="Player")
         {
+            Soundy.Play();
             Debug.Log("Spring");
 
             Vector2 vel = collision.relativeVelocity; //LittleGuy.PlayerRB.velocity;
@@ -66,11 +61,12 @@ public class SpringBehavior : MonoBehaviour
                     LittleGuy.CanJump=false;
                     LittleGuy.OnSpring=true;
                     LittleGuy.CanGroundPound = true;
+                    LittleGuy.JumpBoosting = JumpBoost;
                     
-                    //if(!LittleGuy.Dashing)
-                    //{
+                    if(!LittleGuy.Dashing)
+                    {
                         LittleGuy.CanDoubleJump=true;
-                    //}
+                    }
 
                     //if player is going faster than BounceVelY, their new velocity will be in the middle of their old one and BounceVelocity
                     float NewVel = MinVelocityOutput;

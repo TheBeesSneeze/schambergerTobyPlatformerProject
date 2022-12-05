@@ -334,7 +334,7 @@ TextureImporter:
         width: 26
         height: 26
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -355,7 +355,7 @@ TextureImporter:
         width: 26
         height: 26
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -363,6 +363,27 @@ TextureImporter:
       bones: []
       spriteID: bedf2457db2dff94c9dcd2ac2cd7f9ca
       internalID: 1407750524
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: minesweeper ui_12
+      rect:
+        serializedVersion: 2
+        x: 27
+        y: 34
+        width: 26
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7a36c6401ccce4c4893ebeb222654a01
+      internalID: -198975680
       vertices: []
       indices: 
       edges: []
@@ -389,6 +410,7 @@ TextureImporter:
       minesweeper ui_9: -535797042
       minesweeper ui_1: -1513952950
       minesweeper ui_0: 1792406716
+      minesweeper ui_12: -198975680
       minesweeper ui_10: -1899352837
   spritePackingTag: 
   pSDRemoveMatte: 0

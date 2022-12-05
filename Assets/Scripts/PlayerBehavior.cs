@@ -4,14 +4,21 @@ using UnityEngine;
 
 public class PlayerBehavior : MonoBehaviour
 {
-    public ArmBehavior Arm;
     public Rigidbody2D PlayerRB;
     public SpriteRenderer SpriteRender;
     public SwingingBehavior SwingBehavior;
 
     public Animator LittleGuyAnimator;
 
+    public FreezeBehavior LastFreezeBox;
+
+    public AudioClip JumpSound;
+    public AudioClip DashSound;
+    public AudioClip CoinSound;
+
     // Variables for as far as the eye can see...
+
+    public int Checkpoint=0;
 
     public bool DebugMode=false;
     
@@ -43,6 +50,7 @@ public class PlayerBehavior : MonoBehaviour
     public bool FacingRight = true;
 
     public bool Stunned = false;
+    public bool Frozen = false;
     public float TimeStunned;
 
     public float BaseMass = 2.5f;
@@ -90,7 +98,7 @@ public class PlayerBehavior : MonoBehaviour
         BeStunned();
 
         //Reset Speed when change directions
-        if((Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D))&&CanDoubleJump)
+        if((Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D))&&!Dashing)
         {
             TimeStartedMoving = Time.time;
             Speed = WalkSpeed;
@@ -102,7 +110,7 @@ public class PlayerBehavior : MonoBehaviour
 
         //Jump
             // When the player starts to descend, their mass will increase. If the player holds down space however, their mass will not increase and they will fall a bit faster
-        if(Input.GetKeyDown(KeyCode.Space) && !Stunned && !SwingBehavior.Swinging && !InsideJumpBoost && !JumpBoosting)
+        if(Input.GetKeyDown(KeyCode.Space) && !Stunned && !SwingBehavior.Swinging && !InsideJumpBoost && !JumpBoosting && !Frozen && !InsideJelly)
         {
             Jumps();
         }
@@ -120,7 +128,7 @@ public class PlayerBehavior : MonoBehaviour
     void FixedUpdate()
     {
         //walk
-        if(!Dashing)
+        if(!Dashing&&!Frozen)
         {
             Vector2 NewPos = gameObject.transform.position;
 
@@ -134,7 +142,7 @@ public class PlayerBehavior : MonoBehaviour
     {
         //Flip the sprite pretty much
         //                                   Turn to left                                                              Turn to right
-        if(((Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D) && FacingRight) || (Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A) && !FacingRight)) && (CanDoubleJump || InsideJelly) ) //turn left
+        if(((Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D) && FacingRight) || (Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A) && !FacingRight)) && (CanDoubleJump || InsideJelly) && !Frozen) //turn left
         {
             FacingRight=!FacingRight;
             BaseScale[0] *= -1;
@@ -157,8 +165,9 @@ public class PlayerBehavior : MonoBehaviour
         GroundPounding = false;
 
         //Regular Jump
-        if(CanJump && !OnSpring && !InsideJelly)
+        if(CanJump && !OnSpring)
         {
+            JumpBoosting=false;
             Jump();
         }
         //Double Jump
@@ -188,6 +197,7 @@ public class PlayerBehavior : MonoBehaviour
 
             Invoke("CancelDash",0.5f);
             LittleGuyAnimator.SetBool("Dashing",true);
+            AudioSource.PlayClipAtPoint(DashSound,gameObject.transform.position);
         }
 
         CancelDash();
@@ -209,6 +219,7 @@ public class PlayerBehavior : MonoBehaviour
         TimeStartedJumping = Time.time;
         PreviousScale = gameObject.transform.localScale;
         LittleGuyAnimator.SetBool("Running",false);
+        AudioSource.PlayClipAtPoint(JumpSound,gameObject.transform.position);
     }
 
     public void CancelDash()
@@ -224,7 +235,7 @@ public class PlayerBehavior : MonoBehaviour
     public void BeStunned()
     {   
         //Normal
-        if(!Stunned) 
+        if(!Stunned) //thats where that is?
         {
             xMove = Input.GetAxis("Horizontal");
         }
@@ -296,7 +307,7 @@ public class PlayerBehavior : MonoBehaviour
     //Essentially, it lets the player control the height / speed of their jump by holding space
     public void AdjustJump()
     {
-        if(!InsideJumpBoost && !InsideJelly)
+        if(!InsideJumpBoost && !InsideJelly && !Frozen)
         {
             if(Jumping)
             {
@@ -369,7 +380,7 @@ public class PlayerBehavior : MonoBehaviour
 
     public void Running()
     {
-        if(CanJump)
+        if(CanJump&&!Frozen)
         {
             if(Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D))
             {
@@ -410,21 +421,58 @@ public class PlayerBehavior : MonoBehaviour
         TimeStoppedJumping = Time.time;
         //gameObject.transform.localScale = BaseScale;
         
-        Arm.FirstRodeo = true;
         LittleGuyAnimator.SetBool("Dashing",false);
     }
 
     
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        
-        if(collision.gameObject.tag == "Floor" || collision.gameObject.tag=="Moving Platform" || collision.gameObject.tag=="Platform")
+        string Tag = collision.gameObject.tag;
+        Debug.Log(Tag);
+        //Stop freeze box launch if crash into wall
+        if(JumpBoosting)
+        {
+            Debug.Log("Pre Crash");
+            Debug.Log(Tag);
+            if(Tag=="Moving Platform" || Tag=="Platform"|| Tag=="Wall"|| Tag=="Floor")
+            {
+                Debug.Log("Crash");
+                if(LastFreezeBox!=null)
+                {
+                    LastFreezeBox.MyState=FreezeBehavior.FreezeState.Moving;
+                    LastFreezeBox.UpdateSprite();
+                    LastFreezeBox.LaunchingPlayer=false;
+
+                    //reset the player and make them leave the launch mode
+                    PlayerRB.bodyType = RigidbodyType2D.Dynamic;
+                    PlayerRB.useFullKinematicContacts = false;
+
+                    JumpBoosting=false;
+                    CanDoubleJump = true;
+                    Dashing=true;
+                    Frozen=false; 
+
+                    Stunned=true;
+                    TimeStunned=Time.time;
+                    StunDuration=2;
+                }
+            }
+        }
+
+        if(Tag == "Floor" || Tag=="Moving Platform" || Tag=="Platform" || (Tag=="Fragile Platform"&&!GroundPounding) )
         {
             ResetCharacter();
         }
-        if(collision.gameObject.tag == "Platform")
+
+        
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        string Tag = collision.gameObject.tag;
+        if(Tag == "Floor" || Tag=="Moving Platform" || Tag=="Platform" || Tag=="Fragile Platform")
         {
-            Dashing=false;
+            CanJump=false;
         }
     }
     
@@ -438,6 +486,41 @@ public class PlayerBehavior : MonoBehaviour
             CanDoubleJump=false;
             PlayerRB.gravityScale = 2;
             PlayerRB.velocity = new Vector2(PlayerRB.velocity.x,PlayerRB.velocity.y/4);
+
+            
+        }
+
+        else if (collider.gameObject.tag == "Freeze")
+        {
+            if(LastFreezeBox!=null)
+            {
+                LastFreezeBox.LaunchingPlayer=false;
+                
+            }
+            LastFreezeBox = collider.GetComponent<FreezeBehavior>();
+        }
+
+        else if(collider.gameObject.tag == "Checkpoint")
+        {
+            int cp = collider.gameObject.GetComponent<SpriteRenderer>().sortingOrder; //cp stands for Checkpoint and not anything else
+            Debug.Log("Checkpoint " + cp);
+            if(cp > Checkpoint)
+            {
+                Checkpoint=cp;
+            }
+        }
+
+        else if (collider.gameObject.tag == "Finish")
+        {
+            ResetCharacter();
+            CanJump=true;
+            CanDoubleJump=false;
+        }
+
+        else if (collider.gameObject.tag == "Coin")
+        {
+            Destroy(collider.gameObject);
+            AudioSource.PlayClipAtPoint(CoinSound,gameObject.transform.position,0.75f);
         }
     
     }

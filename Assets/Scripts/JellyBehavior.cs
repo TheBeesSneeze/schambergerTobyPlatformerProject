@@ -35,7 +35,7 @@ public class JellyBehavior : MonoBehaviour
                 {
                     VelY = Mathf.Lerp(OldVelocity,TargetVelocity + Modifier,(Time.time-TimeOfSchloooop)/TimeToSchloooop);
                 }
-                LittleGuy.PlayerRB.velocity = new Vector2(LittleGuy.PlayerRB.velocity.x,VelY);
+                LittleGuy.PlayerRB.velocity = new Vector2(LittleGuy.PlayerRB.velocity.x*0.95f,VelY);
             } 
             if(Input.GetKeyDown(KeyCode.Space))
             {

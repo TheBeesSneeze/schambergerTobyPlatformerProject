@@ -77,6 +77,7 @@ public class MovingPlatformBehavior : MonoBehaviour
                     LittleGuyBehavior.CanJump=false;
                     LittleGuyBehavior.CanGroundPound = true;
                     LittleGuyBehavior.GroundPounding = false;
+                    LittleGuyBehavior.JumpBoosting = true;
                     LittleGuyBehavior.PlayerRB.AddForce(EndingBoostForce);
                 }
                 LittleGuy.gameObject.transform.parent = null;
@@ -113,6 +114,8 @@ public class MovingPlatformBehavior : MonoBehaviour
         {
             TouchingPlayer = true;
             LittleGuy.gameObject.transform.SetParent(gameObject.transform,true);
+
+            
         }
     }
 

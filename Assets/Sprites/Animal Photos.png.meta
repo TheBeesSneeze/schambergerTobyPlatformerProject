@@ -161,8 +161,8 @@ TextureImporter:
       name: Animal Photos_2
       rect:
         serializedVersion: 2
-        x: 0
-        y: 384
+        x: 720
+        y: 894
         width: 640
         height: 384
       alignment: 0
@@ -182,8 +182,8 @@ TextureImporter:
       name: Animal Photos_3
       rect:
         serializedVersion: 2
-        x: 641
-        y: 384
+        x: 720
+        y: 510
         width: 640
         height: 384
       alignment: 0

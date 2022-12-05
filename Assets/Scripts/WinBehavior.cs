@@ -8,18 +8,7 @@ public class WinBehavior : MonoBehaviour
     //public PlayerBehavior LittleGuy;
 
     public int SceneToLoad = 0;
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    public AudioSource WinSound;
 
     //i dont know how to get this code working man
 
@@ -28,8 +17,15 @@ public class WinBehavior : MonoBehaviour
         if(collider.gameObject.tag=="Player")
         {
             Debug.Log("Win condition met");
-            SceneManager.LoadScene(SceneToLoad);
+
+            WinSound.Play();
+            Invoke("MoveOn",2f);
             //SceneManager.MoveGameObjectToScene(LittleGuy.gameObject, SceneToLoad);
         }
+    }
+
+    public void MoveOn()
+    {
+        SceneManager.LoadScene(SceneToLoad);
     }
 }
