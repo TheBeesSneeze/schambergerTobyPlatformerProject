@@ -7,6 +7,7 @@ public class PlayerBehavior : MonoBehaviour
     public Rigidbody2D PlayerRB;
     public SpriteRenderer SpriteRender;
     public SwingingBehavior SwingBehavior;
+    public GameController GC;
 
     public Animator LittleGuyAnimator;
 
@@ -77,6 +78,7 @@ public class PlayerBehavior : MonoBehaviour
     void Start()
     {
         PlayerRB = GetComponent<Rigidbody2D>();
+        GC = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<GameController>();
         SpriteRender = gameObject.GetComponent<SpriteRenderer>();
 
         BaseScale = gameObject.transform.localScale;
@@ -197,7 +199,10 @@ public class PlayerBehavior : MonoBehaviour
 
             Invoke("CancelDash",0.5f);
             LittleGuyAnimator.SetBool("Dashing",true);
-            AudioSource.PlayClipAtPoint(DashSound,gameObject.transform.position);
+            if(GC.SoundPlaying)
+            {
+                AudioSource.PlayClipAtPoint(DashSound,gameObject.transform.position);
+            }
         }
 
         CancelDash();
@@ -219,7 +224,11 @@ public class PlayerBehavior : MonoBehaviour
         TimeStartedJumping = Time.time;
         PreviousScale = gameObject.transform.localScale;
         LittleGuyAnimator.SetBool("Running",false);
-        AudioSource.PlayClipAtPoint(JumpSound,gameObject.transform.position);
+        if(GC.SoundPlaying)
+        {
+            AudioSource.PlayClipAtPoint(JumpSound,gameObject.transform.position);
+        }
+        
     }
 
     public void CancelDash()
@@ -520,7 +529,10 @@ public class PlayerBehavior : MonoBehaviour
         else if (collider.gameObject.tag == "Coin")
         {
             Destroy(collider.gameObject);
-            AudioSource.PlayClipAtPoint(CoinSound,gameObject.transform.position,0.75f);
+            if(GC.SoundPlaying)
+            {
+                AudioSource.PlayClipAtPoint(CoinSound,gameObject.transform.position,0.75f);
+            }
         }
     
     }

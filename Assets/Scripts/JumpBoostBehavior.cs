@@ -5,10 +5,13 @@ using UnityEngine;
 public class JumpBoostBehavior : MonoBehaviour
 {
     public PlayerBehavior LittleGuy;
+    public GameController GC;
 
     public Renderer SpriteRenderer;
 
     public Vector2 BoostForce = new Vector2(500,500);
+
+    public AudioSource BoostSound;
 
     public bool BoostReady = true;
 
@@ -24,6 +27,7 @@ public class JumpBoostBehavior : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        GC = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<GameController>();
         SpriteRenderer = gameObject.GetComponent<Renderer>();
 
         GameObject LittleGuyGameObject=GameObject.FindGameObjectWithTag("Player");
@@ -95,6 +99,11 @@ public class JumpBoostBehavior : MonoBehaviour
         Invoke("EndBoost",0.5f);
         LittleGuy.LittleGuyAnimator.SetBool("Jumping",true);
         LittleGuy.LittleGuyAnimator.SetBool("Dashing",true);
+        if(GC.SoundPlaying)
+        {
+            BoostSound.Play();
+        }
+        
     }
 
     //turns on/off the boost

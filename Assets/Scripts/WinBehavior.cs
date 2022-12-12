@@ -7,10 +7,17 @@ public class WinBehavior : MonoBehaviour
 {
     //public PlayerBehavior LittleGuy;
 
+    public GameController GC;
+
     public int SceneToLoad = 0;
     public AudioSource WinSound;
-
+    
     //i dont know how to get this code working man
+
+    void Start()
+    {
+        GC = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<GameController>();
+    }
 
     public void OnTriggerEnter2D(Collider2D collider)
     {
@@ -18,7 +25,10 @@ public class WinBehavior : MonoBehaviour
         {
             Debug.Log("Win condition met");
 
-            WinSound.Play();
+            if(GC.SoundPlaying)
+            {
+                WinSound.Play();
+            }
             Invoke("MoveOn",2f);
             //SceneManager.MoveGameObjectToScene(LittleGuy.gameObject, SceneToLoad);
         }

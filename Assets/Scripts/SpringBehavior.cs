@@ -10,6 +10,7 @@ public class SpringBehavior : MonoBehaviour
 {
     public PlayerBehavior LittleGuy;
     public AudioSource Soundy;
+    public GameController GC;
 
     public bool BounceUp=false;
     public bool BounceDown=false;
@@ -34,20 +35,23 @@ public class SpringBehavior : MonoBehaviour
     {
         GameObject LittleGuyGameObject=GameObject.FindGameObjectWithTag("Player");
         LittleGuy = LittleGuyGameObject.GetComponent<PlayerBehavior>();
+        GC = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<GameController>();
     }
 
     public void OnCollisionEnter2D(Collision2D collision)
     {
         if(collision.gameObject.tag=="Player")
         {
-            Soundy.Play();
+            if(GC.SoundPlaying)
+            {
+                Soundy.Play();
+            }
             Debug.Log("Spring");
 
             Vector2 vel = collision.relativeVelocity; //LittleGuy.PlayerRB.velocity;
             Debug.Log(vel);
 
             //the fun part
-
             if(BounceUp)
             {
                 

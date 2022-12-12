@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class FreezeBehavior : MonoBehaviour
 {
-
+    public GameController GC;
     //Player can enter a freeze box by pressing space or e, dashing inside, or shooting in from another freeze box
     public SpriteRenderer ThisRenderer;
     public Sprite OffSprite;
@@ -48,6 +48,7 @@ public class FreezeBehavior : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        GC = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<GameController>();
         LittleGuy=GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerBehavior>();
 
         //Get sprite renderers of those silly little prompts
@@ -238,21 +239,24 @@ public class FreezeBehavior : MonoBehaviour
     public void UpdateMusic()
     {
         //if(Little)
-        if(MyState==FreezeState.MovingPlayer || MyState==FreezeState.PullingInPlayer)
+        if(GC.MusicPlaying)
         {
-            BackgroundMusic.pitch = Mathf.Lerp(MusicPitch,ReversePitch, (Time.time-TimeOfFreeze)/2);
-        }
-        else if(LaunchingPlayer)
-        {
-            BackgroundMusic.pitch = Mathf.Lerp(MusicPitch,2.0f, (Time.time-TimeOfLaunch));
-        }
-        else if(MyState!=FreezeState.Idle)
-        {
-            BackgroundMusic.pitch = Mathf.Lerp(MusicPitch,1, Time.time%1);
-        }
-        else
-        {
-            BackgroundMusic.pitch=1;
+            if(MyState==FreezeState.MovingPlayer || MyState==FreezeState.PullingInPlayer)
+            {
+                BackgroundMusic.pitch = Mathf.Lerp(MusicPitch,ReversePitch, (Time.time-TimeOfFreeze)/2);
+            }
+            else if(LaunchingPlayer)
+            {
+                BackgroundMusic.pitch = Mathf.Lerp(MusicPitch,2.0f, (Time.time-TimeOfLaunch));
+            }
+            else if(MyState!=FreezeState.Idle)
+            {
+                BackgroundMusic.pitch = Mathf.Lerp(MusicPitch,1, Time.time%1);
+            }
+            else
+            {
+                BackgroundMusic.pitch=1;
+            }
         }
     }
 
@@ -299,7 +303,10 @@ public class FreezeBehavior : MonoBehaviour
             {
                 MyState=FreezeState.Idle;
                 
-                if(!LittleGuy.JumpBoosting) BackgroundMusic.pitch = 1;
+                if(GC.MusicPlaying)
+                {
+                    if(!LittleGuy.JumpBoosting) BackgroundMusic.pitch = 1;
+                }
 
                 LittleGuy.CanJump = CouldJump;
                 LittleGuy.CanDoubleJump = CouldDash;

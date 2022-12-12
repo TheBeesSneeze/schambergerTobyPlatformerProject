@@ -6,6 +6,11 @@ public class GameController : MonoBehaviour
 {
     public bool Paused = false;
 
+    public bool MusicPlaying = true;
+    public bool SoundPlaying = true;
+
+    public AudioSource BackgroundMusic;
+
     // Update is called once per frame
     void Update()
     {
